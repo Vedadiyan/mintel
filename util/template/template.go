@@ -141,7 +141,7 @@ func (tw *TemplateWriter) write(seg string) bool {
 	return tw.key(seg)
 }
 
-func Generate(str string) (map[string]Bind, error) {
+func Parse(str string) (map[string]Bind, error) {
 	matches := mainPattern.FindAllString(str, -1)
 	out := make(map[string]Bind)
 	tw := New(TreatTopAsMap())
