@@ -11,11 +11,11 @@ type (
 		binder template.Binder
 	}
 	ConsoleTracer struct {
-		data   map[string]any
+		data   map[string]map[string]any
 		binder template.Binder
 	}
 	ConsoleMeter struct {
-		data   map[string]any
+		data   map[string]map[string]any
 		binder template.Binder
 	}
 	ConsoleClient struct {
@@ -32,11 +32,11 @@ func NewConsole(l, t, m template.Binder) *ConsoleClient {
 	}
 	c.tracer = &ConsoleTracer{
 		binder: t,
-		data:   make(map[string]any),
+		data:   make(map[string]map[string]any),
 	}
 	c.meter = &ConsoleMeter{
 		binder: m,
-		data:   make(map[string]any),
+		data:   make(map[string]map[string]any),
 	}
 	return c
 }
