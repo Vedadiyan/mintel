@@ -33,6 +33,7 @@ var (
 	mainPattern  = regexp.MustCompile(`\$\([^\(^\)]*\)`)
 	indexPattern = regexp.MustCompile(`\[[^\[^\]]*\]`)
 	digit        = regexp.MustCompile(`[0-9]+$`)
+	space        = regexp.MustCompile(`(("[^"]*"|[^"\s]*)*)\s*`)
 )
 
 func TreatTopAsMap() TemplateWriterOpts {
@@ -74,7 +75,7 @@ func (tw *TemplateWriter) Write(str string, b io.Writer) {
 		}
 	}
 	if !ended {
-		tw.left.WriteString("{{ . }}")
+		tw.left.WriteString("{{ Serialize . }}")
 	}
 	b.Write(tw.left.Bytes())
 	b.Write(tw.right.Bytes())
@@ -142,8 +143,16 @@ func (tw *TemplateWriter) write(seg string) bool {
 }
 
 func Parse(templateStr string) (Binder, error) {
+	templateStr = strings.ReplaceAll(templateStr, "\r", "")
+	templateStr = strings.ReplaceAll(templateStr, "\n", "")
+	templateStr = strings.TrimLeftFunc(templateStr, func(r rune) bool { return r == ' ' || r == '\t' })
+	templateStr = strings.TrimRightFunc(templateStr, func(r rune) bool { return r == ' ' || r == '\t' })
+	templateStr = RemoveSpace(templateStr)
 	matches := mainPattern.FindAllString(templateStr, -1)
 	out := make(Binder)
+	out["_"] = func(v any) string {
+		return templateStr
+	}
 	tw := New(TreatTopAsMap())
 	serialize := func(v any) string {
 		return string(json.Marshal(v))
@@ -152,7 +161,7 @@ func Parse(templateStr string) (Binder, error) {
 		var buffer bytes.Buffer
 		tw.Write(match, &buffer)
 		value := buffer.String()
-		fmt.Println(value)
+		//fmt.Println(value)
 		template, err := template.New(value).Funcs(template.FuncMap{
 			"Serialize": serialize,
 		}).Parse(value)
@@ -168,9 +177,41 @@ func Parse(templateStr string) (Binder, error) {
 	return out, nil
 }
 
-func Bind(templateStr string, binder Binder, v any) string {
+func Bind(binder Binder, v any) string {
+	templateStr := binder["_"](nil)
 	for key, value := range binder {
-		templateStr = strings.ReplaceAll(templateStr, key, value(v))
+		value := value(v)
+		if len(value) == 0 {
+			value = "null"
+		}
+		templateStr = strings.ReplaceAll(templateStr, key, value)
 	}
 	return templateStr
+}
+
+func RemoveSpace(str string) string {
+	var buffer bytes.Buffer
+	hold := false
+	for i := 0; i < len(str); i++ {
+		r := str[i]
+		switch r {
+		case '\\':
+			{
+				i++
+				continue
+			}
+		case '"':
+			{
+				hold = !hold
+			}
+		}
+		if hold {
+			buffer.WriteByte(r)
+			continue
+		}
+		if r != ' ' && r != '\t' {
+			buffer.WriteByte(r)
+		}
+	}
+	return buffer.String()
 }

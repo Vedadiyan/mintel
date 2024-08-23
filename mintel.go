@@ -45,17 +45,15 @@ type (
 	}
 
 	TelemetryOpt func(Telemetry)
-
-	DefaultClient struct {
-		LogTemplate     string
-		TraceTemplate   string
-		MetricsTemplate string
-	}
 )
 
 var (
 	_clients map[string]CreateClient
 )
+
+func init() {
+	_clients = make(map[string]CreateClient)
+}
 
 func TraceRef[T any](name string, ref *T) TelemetryOpt {
 	return func(t Telemetry) {
