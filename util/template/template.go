@@ -23,7 +23,8 @@ type (
 		mut sync.Mutex
 	}
 	TemplateWriterOpts func(*TemplateWriter)
-	Bind               func(v any) string
+	BinderFunc         func(v any) string
+	Binder             map[string]BinderFunc
 )
 
 var (
@@ -141,9 +142,9 @@ func (tw *TemplateWriter) write(seg string) bool {
 	return tw.key(seg)
 }
 
-func Parse(str string) (map[string]Bind, error) {
-	matches := mainPattern.FindAllString(str, -1)
-	out := make(map[string]Bind)
+func Parse(templateStr string) (Binder, error) {
+	matches := mainPattern.FindAllString(templateStr, -1)
+	out := make(Binder)
 	tw := New(TreatTopAsMap())
 	for _, match := range matches {
 		var buffer bytes.Buffer
@@ -161,4 +162,11 @@ func Parse(str string) (map[string]Bind, error) {
 		}
 	}
 	return out, nil
+}
+
+func Bind(templateStr string, binder Binder, v any) string {
+	for key, value := range binder {
+		templateStr = strings.ReplaceAll(templateStr, key, value(v))
+	}
+	return templateStr
 }
