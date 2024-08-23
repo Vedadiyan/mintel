@@ -45,6 +45,12 @@ type (
 	}
 
 	TelemetryOpt func(Telemetry)
+
+	DefaultClient struct {
+		LogTemplate     string
+		TraceTemplate   string
+		MetricsTemplate string
+	}
 )
 
 var (
