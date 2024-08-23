@@ -145,18 +145,16 @@ func Parse(templateStr string) (Binder, error) {
 	matches := mainPattern.FindAllString(templateStr, -1)
 	out := make(Binder)
 	tw := New(TreatTopAsMap())
+	serialize := func(v any) string {
+		return string(json.Marshal(v))
+	}
 	for _, match := range matches {
 		var buffer bytes.Buffer
 		tw.Write(match, &buffer)
 		value := buffer.String()
 		fmt.Println(value)
 		template, err := template.New(value).Funcs(template.FuncMap{
-			"Incr": func(i int) int {
-				return i + 1
-			},
-			"Serialize": func(v any) string {
-				return string(json.Marshal(v))
-			},
+			"Serialize": serialize,
 		}).Parse(value)
 		if err != nil {
 			return nil, err
