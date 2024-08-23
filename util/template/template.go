@@ -55,6 +55,7 @@ func (tw *TemplateWriter) Write(str string, b io.Writer) {
 	str = strings.TrimLeftFunc(str, func(r rune) bool { return r == '$' || r == '(' || r == ' ' })
 	str = strings.TrimRightFunc(str, func(r rune) bool { return r == ')' })
 	segments := strings.Split(str, ".")
+	tw.index = 0
 	tw.segments = segments
 	tw.length = len(segments)
 	ended := false
@@ -63,7 +64,8 @@ func (tw *TemplateWriter) Write(str string, b io.Writer) {
 		offset = 1
 		ended = tw.write(fmt.Sprintf("[%s]", tw.segments[0]))
 	}
-	for _, seg := range tw.segments[offset:] {
+	for index, seg := range tw.segments[offset:] {
+		tw.index = index + offset
 		if tw.write(seg) {
 			ended = true
 			break
@@ -80,16 +82,18 @@ func (tw *TemplateWriter) wildCard(seg string) bool {
 	isLast := tw.index == tw.length-1
 	if isLast {
 		tw.left.WriteString("{ ")
-	}
-	tw.left.WriteString("{{- range $i, $v := . }}")
-	tw.left.WriteString("{{- with $v }}")
-	tw.right.WriteString("{{- end }}")
-	if isLast {
-		tw.left.WriteString("{{- if gt $i 0 }}, {{- end}}\"{{ $i }}\": \"{{ . }}\"")
+		tw.left.WriteString("{{- $i := 0}}")
+		tw.left.WriteString("{{- range $k, $v := . }}")
+		tw.left.WriteString("{{- if gt $i 0 }}, {{- end }} ")
+		tw.left.WriteString("\"{{ $k }}\": \"{{ . }}\"")
+		tw.left.WriteString("{{- $i = (Incr $i) }}")
 		tw.left.WriteString("{{- end }}")
 		tw.left.WriteString(" }")
 		return true
 	}
+	tw.left.WriteString("{{- range $i, $v := . }}")
+	tw.left.WriteString("{{- with $v }}")
+	tw.right.WriteString("{{- end }}")
 	tw.right.WriteString("{{- end }}")
 	return false
 }
@@ -151,7 +155,23 @@ func Parse(templateStr string) (Binder, error) {
 		tw.Write(match, &buffer)
 		value := buffer.String()
 		fmt.Println(value)
-		template, err := template.New(value).Parse(value)
+		template, err := template.New(value).Funcs(template.FuncMap{
+			"Incr": func(i int) int {
+				return i + 1
+			},
+			"AutoWrap": func(str string) string {
+				if strings.HasPrefix(str, "[") && strings.HasSuffix(str, "]") {
+					return str
+				}
+				if strings.HasPrefix(str, "{") && strings.HasSuffix(str, "}") {
+					return str
+				}
+				if digit.MatchString(str) {
+					return str
+				}
+				return fmt.Sprintf("\"%s\"", str)
+			},
+		}).Parse(value)
 		if err != nil {
 			return nil, err
 		}
