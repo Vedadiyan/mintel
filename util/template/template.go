@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+
+	"github.com/vedadiyan/mintel/util/json"
 )
 
 type (
@@ -81,14 +83,7 @@ func (tw *TemplateWriter) Write(str string, b io.Writer) {
 func (tw *TemplateWriter) wildCard(seg string) bool {
 	isLast := tw.index == tw.length-1
 	if isLast {
-		tw.left.WriteString("{ ")
-		tw.left.WriteString("{{- $i := 0}}")
-		tw.left.WriteString("{{- range $k, $v := . }}")
-		tw.left.WriteString("{{- if gt $i 0 }}, {{- end }} ")
-		tw.left.WriteString("\"{{ $k }}\": \"{{ . }}\"")
-		tw.left.WriteString("{{- $i = (Incr $i) }}")
-		tw.left.WriteString("{{- end }}")
-		tw.left.WriteString(" }")
+		tw.left.WriteString("{{- Serialize . }}")
 		return true
 	}
 	tw.left.WriteString("{{- range $i, $v := . }}")
@@ -159,17 +154,8 @@ func Parse(templateStr string) (Binder, error) {
 			"Incr": func(i int) int {
 				return i + 1
 			},
-			"AutoWrap": func(str string) string {
-				if strings.HasPrefix(str, "[") && strings.HasSuffix(str, "]") {
-					return str
-				}
-				if strings.HasPrefix(str, "{") && strings.HasSuffix(str, "}") {
-					return str
-				}
-				if digit.MatchString(str) {
-					return str
-				}
-				return fmt.Sprintf("\"%s\"", str)
+			"Serialize": func(v any) string {
+				return string(json.Marshal(v))
 			},
 		}).Parse(value)
 		if err != nil {
