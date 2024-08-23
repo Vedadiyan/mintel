@@ -25,19 +25,7 @@ type (
 	}
 )
 
-func NewConsole(logTmpl, traceTmpl, metricsTmpl string) (*ConsoleClient, error) {
-	l, err := template.Parse(logTmpl)
-	if err != nil {
-		return nil, err
-	}
-	t, err := template.Parse(traceTmpl)
-	if err != nil {
-		return nil, err
-	}
-	m, err := template.Parse(metricsTmpl)
-	if err != nil {
-		return nil, err
-	}
+func NewConsole(l, t, m template.Binder) *ConsoleClient {
 	c := new(ConsoleClient)
 	c.logger = &ConsoleLogger{
 		binder: l,
@@ -50,7 +38,7 @@ func NewConsole(logTmpl, traceTmpl, metricsTmpl string) (*ConsoleClient, error) 
 		binder: m,
 		data:   make(map[string]any),
 	}
-	return c, nil
+	return c
 }
 
 func (c *ConsoleClient) Logger() Logger {
