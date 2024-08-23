@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"text/template"
 )
 
 type (
@@ -25,6 +26,7 @@ type (
 )
 
 var (
+	mainPattern  = regexp.MustCompile(`\$\([^\(^\)]*\)`)
 	indexPattern = regexp.MustCompile(`\[[^\[^\]]*\]`)
 	digit        = regexp.MustCompile(`[0-9]+$`)
 )
@@ -35,7 +37,7 @@ func TreatTopAsMap() TemplateWriterOpts {
 	}
 }
 
-func NewTemplateWriter(opts ...TemplateWriterOpts) *TemplateWriter {
+func New(opts ...TemplateWriterOpts) *TemplateWriter {
 	tw := new(TemplateWriter)
 	for _, opt := range opts {
 		opt(tw)
@@ -136,4 +138,22 @@ func (tw *TemplateWriter) write(seg string) bool {
 		return tw.field(seg)
 	}
 	return tw.key(seg)
+}
+
+func Generate(str string) (map[string]*template.Template, error) {
+	matches := mainPattern.FindAllString(str, -1)
+	out := make(map[string]*template.Template)
+	tw := New(TreatTopAsMap())
+	for _, match := range matches {
+		var buffer bytes.Buffer
+		tw.Write(match, &buffer)
+		value := buffer.String()
+		fmt.Println(value)
+		template, err := template.New(value).Parse(value)
+		if err != nil {
+			return nil, err
+		}
+		out[match] = template
+	}
+	return out, nil
 }
