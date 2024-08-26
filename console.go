@@ -37,6 +37,8 @@ func NewConsole(l, t, m template.Binder) CreateFunc {
 	var pool *sync.Pool
 	pool = &sync.Pool{
 		New: func() any {
+			fmt.Println("created")
+
 			c := new(Console)
 			c.logger = &ConsoleLogger{
 				ConsoleWriter: &ConsoleWriter{
