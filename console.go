@@ -87,13 +87,13 @@ func (c *Console) Print(v any) {
 }
 
 func (c *Console) Close() {
-	c.Logger().Flush()
-	c.Tracer().Flush()
-	c.Meter().Flush()
 	defer c.pool.Put(c)
 	defer c.logger.Clear()
 	defer c.tracer.Clear()
 	defer c.meter.Clear()
+	c.Logger().Flush()
+	c.Tracer().Flush()
+	c.Meter().Flush()
 }
 
 func (c *ConsoleWriter) Add(kvs ...*KeyValue) Writer {
@@ -118,7 +118,5 @@ func (c *ConsoleWriter) Flush() {
 func (c *ConsoleWriter) Clear() {
 	c.mut.Lock()
 	defer c.mut.Unlock()
-	for key := range c.data {
-		delete(c.data, key)
-	}
+	clear(c.data)
 }
