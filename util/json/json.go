@@ -3,6 +3,7 @@ package json
 import (
 	"bytes"
 	"reflect"
+	"sort"
 	"strconv"
 	"sync"
 )
@@ -102,14 +103,32 @@ func (e *Encoder) encodeMap(v reflect.Value) {
 	e.buffer.WriteByte('{')
 	l := v.Len()
 	ks := v.MapKeys()
+	keys := make([]struct {
+		v reflect.Value
+		s string
+	}, 0)
+
+	for _, key := range ks {
+		keys = append(keys, struct {
+			v reflect.Value
+			s string
+		}{
+			v: key,
+			s: e.encodeToString(key),
+		})
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i].s < keys[j].s
+	})
+
 	for i := 0; i < l; i++ {
 		if i > 0 {
 			e.buffer.WriteByte(',')
 		}
-		key := ks[i]
-		e.encodeValue(key)
+		key := keys[i]
+		e.encodeValue(key.v)
 		e.buffer.WriteByte(':')
-		e.Encode(v.MapIndex(key).Elem())
+		e.Encode(v.MapIndex(key.v).Elem())
 	}
 	e.buffer.WriteByte('}')
 }
@@ -151,6 +170,25 @@ func (e *Encoder) encodeValue(v reflect.Value) {
 		}
 	}
 	e.buffer.Write(b)
+}
+
+func (e *Encoder) encodeToString(v reflect.Value) string {
+	switch v.Kind() {
+	case reflect.Bool:
+		return strconv.FormatBool(v.Bool())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(v.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(v.Uint(), 10)
+	case reflect.Float32, reflect.Float64:
+		return strconv.FormatFloat(v.Float(), 'g', -1, 64)
+	case reflect.Complex128, reflect.Complex64:
+		return strconv.FormatComplex(v.Complex(), 'g', -1, 64)
+	default:
+		{
+			return strconv.Quote(v.String())
+		}
+	}
 }
 
 func getType(v reflect.Value) map[int][]byte {

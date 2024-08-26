@@ -22,7 +22,7 @@ func TestConsole(t *testing.T) {
 		// err = fmt.Errorf("test error")
 
 		// testTace = &url.URL{}
-		client.Logger().Add(Info(), KV("Message", "Test"), Timestamp()).Flush()
+		client.Logger().Add(Info(), KV("message", "Test"), Timestamp()).Flush()
 	}
 
 	fn()

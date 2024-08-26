@@ -9,7 +9,7 @@ import (
 
 type (
 	ConsoleWriter struct {
-		data   []any
+		data   map[string]any
 		tel    *Console
 		binder template.Binder
 		mut    sync.RWMutex
@@ -44,21 +44,21 @@ func NewConsole(l, t, m template.Binder) CreateFunc {
 				ConsoleWriter: &ConsoleWriter{
 					binder: l,
 					tel:    c,
-					data:   make([]any, 0),
+					data:   make(map[string]any),
 				},
 			}
 			c.tracer = &ConsoleTracer{
 				ConsoleWriter: &ConsoleWriter{
 					binder: t,
 					tel:    c,
-					data:   make([]any, 0),
+					data:   make(map[string]any),
 				},
 			}
 			c.meter = &ConsoleMeter{
 				ConsoleWriter: &ConsoleWriter{
 					binder: m,
 					tel:    c,
-					data:   make([]any, 0),
+					data:   make(map[string]any),
 				},
 			}
 			c.pool = pool
@@ -102,7 +102,7 @@ func (c *ConsoleWriter) Add(kvs ...*KeyValue) Writer {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 	for _, kv := range kvs {
-		c.data = append(c.data, kv)
+		c.data[kv.Key] = kv.Value
 	}
 	return c
 }
