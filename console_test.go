@@ -14,7 +14,7 @@ func TestConsole(t *testing.T) {
 		var err error
 		client := Open("test", nil, TraceRef("req", &testTace), Trace("method", "GET"))
 		defer client.Close()
-		client.Logger().Add(Begin(), Timestamp()).Flush()
+		client.Logger().Add(Begin(), Timestamp())
 		defer client.Logger().Add(End(), Timestamp())
 		defer func() {
 			if err == nil {
@@ -26,7 +26,7 @@ func TestConsole(t *testing.T) {
 		err = fmt.Errorf("test error")
 
 		// testTace = &url.URL{}
-		client.Logger().Add(Info(), KV("message", "Test")).Flush()
+		client.Logger().Add(LevelInfo(), KV("message", "Test")).Flush()
 	}
 
 	fn()

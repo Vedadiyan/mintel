@@ -86,37 +86,37 @@ func Register(name string, fn CreateFunc) {
 }
 
 func Verbose() *KeyValue {
-	return KV("level", "Verbose")
+	return KV("LEVEL", "Verbose")
 }
 
 func Info() *KeyValue {
-	return KV("level", "INFO")
+	return KV("LEVEL", "INFO")
 }
 
 func Debug() *KeyValue {
-	return KV("level", "DEBUG")
+	return KV("LEVEL", "DEBUG")
 }
 
 func Warn() *KeyValue {
-	return KV("level", "WARN")
+	return KV("LEVEL", "WARN")
 }
 
 func Error() *KeyValue {
-	return KV("level", "ERROR")
+	return KV("LEVEL", "ERROR")
 }
 
 func Timestamp() *KeyValue {
-	return KV("timestamp", time.Now().UnixNano())
+	return KV("TIMESTAMP", time.Now().UnixNano())
 }
 
 func Begin() *KeyValue {
-	return KV("STATE", "BEGIN")
+	return KV("PHASE", "BEGIN")
 }
 
 func InProgress() *KeyValue {
-	return KV("STATE", "IN_PROGRESS")
+	return KV("PHASE", "IN_PROGRESS")
 }
 
 func End() *KeyValue {
-	return KV("STATE", "END")
+	return KV("PHASE", "END")
 }
