@@ -175,15 +175,15 @@ func (e *Encoder) encodeValue(v reflect.Value) {
 func (e *Encoder) encodeToString(v reflect.Value) string {
 	switch v.Kind() {
 	case reflect.Bool:
-		return strconv.FormatBool(v.Bool())
+		return "\"" + strconv.FormatBool(v.Bool()) + "\""
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return strconv.FormatInt(v.Int(), 10)
+		return "\"" + strconv.FormatInt(v.Int(), 10) + "\""
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return strconv.FormatUint(v.Uint(), 10)
+		return "\"" + strconv.FormatUint(v.Uint(), 10) + "\""
 	case reflect.Float32, reflect.Float64:
-		return strconv.FormatFloat(v.Float(), 'g', -1, 64)
+		return "\"" + strconv.FormatFloat(v.Float(), 'g', -1, 64) + "\""
 	case reflect.Complex128, reflect.Complex64:
-		return strconv.FormatComplex(v.Complex(), 'g', -1, 64)
+		return "\"" + strconv.FormatComplex(v.Complex(), 'g', -1, 64) + "\""
 	default:
 		{
 			return strconv.Quote(v.String())
