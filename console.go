@@ -12,6 +12,7 @@ type (
 		data   map[string]any
 		tel    *Console
 		binder template.Binder
+		mut    sync.RWMutex
 	}
 
 	ConsoleLogger struct {
@@ -29,7 +30,6 @@ type (
 		tracer *ConsoleTracer
 		meter  *ConsoleMeter
 		pool   *sync.Pool
-		mut    sync.Mutex
 	}
 )
 
@@ -97,6 +97,8 @@ func (c *Console) Close() {
 }
 
 func (c *ConsoleWriter) Add(kvs ...*KeyValue) Writer {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	for _, kv := range kvs {
 		c.data[kv.Key] = kv.Value
 	}
@@ -104,12 +106,18 @@ func (c *ConsoleWriter) Add(kvs ...*KeyValue) Writer {
 }
 
 func (c *ConsoleWriter) Flush() {
+	defer c.Clear()
+	c.mut.RLock()
+	defer c.mut.RUnlock()
+	if len(c.data) == 0 {
+		return
+	}
 	c.tel.Print(template.Bind(c.binder, c.data))
 }
 
 func (c *ConsoleWriter) Clear() {
-	c.tel.mut.Lock()
-	defer c.tel.mut.Unlock()
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	for key := range c.data {
 		delete(c.data, key)
 	}
