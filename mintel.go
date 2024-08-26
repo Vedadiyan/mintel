@@ -113,8 +113,8 @@ func Begin() *KeyValue {
 	return KV("PHASE", "BEGIN")
 }
 
-func InProgress() *KeyValue {
-	return KV("PHASE", "IN_PROGRESS")
+func Exec() *KeyValue {
+	return KV("PHASE", "EXEC")
 }
 
 func End() *KeyValue {
