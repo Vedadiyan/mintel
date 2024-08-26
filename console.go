@@ -66,7 +66,7 @@ func NewConsole(l, t, m template.Binder) CreateFunc {
 		},
 	}
 
-	return func(m Metadata) Telemetry {
+	return func(metadata Metadata) Telemetry {
 		tel := pool.Get().(Telemetry)
 		return tel
 	}

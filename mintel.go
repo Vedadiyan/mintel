@@ -8,7 +8,7 @@ type (
 
 	Metadata map[string]string
 
-	CreateFunc func(Metadata) Telemetry
+	CreateFunc func(metadata Metadata) Telemetry
 
 	KeyValue struct {
 		Key   string
@@ -107,4 +107,16 @@ func Error() *KeyValue {
 
 func Timestamp() *KeyValue {
 	return KV("timestamp", time.Now().UnixNano())
+}
+
+func Begin() *KeyValue {
+	return KV("STATE", "BEGIN")
+}
+
+func InProgress() *KeyValue {
+	return KV("STATE", "IN_PROGRESS")
+}
+
+func End() *KeyValue {
+	return KV("STATE", "END")
 }

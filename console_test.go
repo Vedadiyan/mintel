@@ -14,6 +14,8 @@ func TestConsole(t *testing.T) {
 		var err error
 		client := Open("test", nil, TraceRef("req", &testTace), Trace("method", "GET"))
 		defer client.Close()
+		client.Logger().Add(Begin(), Timestamp()).Flush()
+		defer client.Logger().Add(End(), Timestamp())
 		defer func() {
 			if err == nil {
 				client.Meter().Add(KV("Call", 1))
