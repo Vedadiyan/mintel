@@ -1,7 +1,6 @@
 package mintel
 
 import (
-	"net/http"
 	"testing"
 )
 
@@ -9,11 +8,21 @@ func TestConsole(t *testing.T) {
 	Register("test", NewConsole(nil, nil, nil))
 
 	fn := func() {
-		testTace, _ := http.NewRequest(http.MethodGet, "https://www.google.com", nil)
+		// testTace, _ := url.Parse("https://www.google.com")
+		// var err error
+		client := Open("test", nil)
+		// defer client.Close()
+		// defer func() {
+		// 	if err == nil {
+		// 		client.Meter().Add(KV("Call", 1))
+		// 		return
+		// 	}
+		// 	client.Logger().Add(Error(), KV("Message", err.Error()), Timestamp())
+		// }()
+		// err = fmt.Errorf("test error")
 
-		client := Open("test", nil, TraceRef("req", testTace.URL), Trace("method", testTace.Method))
-		client.Logger().Add(KV("LEVEL", "INFO"), KV("Message", "Test")).Flush()
-		defer client.Close()
+		// testTace = &url.URL{}
+		client.Logger().Add(Info(), KV("Message", "Test"), Timestamp()).Flush()
 	}
 
 	fn()

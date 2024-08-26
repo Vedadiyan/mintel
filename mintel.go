@@ -1,5 +1,7 @@
 package mintel
 
+import "time"
+
 type (
 	Level string
 	Type  string
@@ -81,4 +83,28 @@ func Open(name string, metadata Metadata, opts ...TelemetryOpt) Telemetry {
 
 func Register(name string, fn CreateFunc) {
 	_clients[name] = fn
+}
+
+func Verbose() *KeyValue {
+	return KV("level", "Verbose")
+}
+
+func Info() *KeyValue {
+	return KV("level", "INFO")
+}
+
+func Debug() *KeyValue {
+	return KV("level", "DEBUG")
+}
+
+func Warn() *KeyValue {
+	return KV("level", "WARN")
+}
+
+func Error() *KeyValue {
+	return KV("level", "ERROR")
+}
+
+func Timestamp() *KeyValue {
+	return KV("timestamp", time.Now().UnixNano())
 }

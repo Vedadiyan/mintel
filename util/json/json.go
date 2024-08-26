@@ -41,6 +41,10 @@ func (e *Encoder) Encode(v reflect.Value) {
 		{
 			e.encodePtr(v)
 		}
+	case reflect.Interface:
+		{
+			e.encodeInterface(v)
+		}
 	case reflect.Array, reflect.Slice:
 		{
 			e.encodeList(v)
@@ -58,6 +62,14 @@ func (e *Encoder) Encode(v reflect.Value) {
 			e.encodeValue(v)
 		}
 	}
+}
+
+func (e *Encoder) encodeInterface(v reflect.Value) {
+	if v.IsZero() {
+		e.buffer.WriteString("null")
+		return
+	}
+	e.Encode(v.Elem())
 }
 
 func (e *Encoder) encodePtr(v reflect.Value) {
@@ -81,7 +93,7 @@ func (e *Encoder) encodeList(v reflect.Value) {
 		if i > 0 {
 			e.buffer.WriteByte(',')
 		}
-		e.Encode(v.Index(i))
+		e.Encode(v.Index(i).Elem())
 	}
 	e.buffer.WriteByte(']')
 }
