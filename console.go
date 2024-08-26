@@ -26,10 +26,11 @@ type (
 	}
 
 	Console struct {
-		logger *ConsoleLogger
-		tracer *ConsoleTracer
-		meter  *ConsoleMeter
-		pool   *sync.Pool
+		metadata Metadata
+		logger   *ConsoleLogger
+		tracer   *ConsoleTracer
+		meter    *ConsoleMeter
+		pool     *sync.Pool
 	}
 )
 
@@ -67,7 +68,8 @@ func NewConsole(l, t, m template.Binder) CreateFunc {
 	}
 
 	return func(metadata Metadata) Telemetry {
-		tel := pool.Get().(Telemetry)
+		tel := pool.Get().(*Console)
+		tel.metadata = metadata
 		return tel
 	}
 }
@@ -85,7 +87,7 @@ func (c *Console) Meter() Writer {
 }
 
 func (c *Console) Print(v any) {
-	fmt.Println(v)
+	fmt.Println(c.metadata, v)
 }
 
 func (c *Console) Close() {
@@ -96,6 +98,7 @@ func (c *Console) Close() {
 	c.Logger().Flush()
 	c.Tracer().Flush()
 	c.Meter().Flush()
+	c.metadata = nil
 }
 
 func (c *ConsoleWriter) Add(kvs ...*KeyValue) Writer {
