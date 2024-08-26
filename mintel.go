@@ -6,53 +6,34 @@ type (
 
 	Metadata map[string]string
 
-	CreateClient func(Metadata) Telemetry
+	CreateFunc func(Metadata) Telemetry
 
 	KeyValue struct {
 		Key   string
 		Value any
 	}
 
-	Logger interface {
-		Debug(...*KeyValue)
-		Info(...*KeyValue)
-		Warning(...*KeyValue)
-		Error(error)
+	Writer interface {
+		Add(...*KeyValue) Writer
 		Flush()
-	}
-
-	Tracer interface {
-		Add(*KeyValue)
-		Notify()
-		NotifyOne(string)
-		Flush()
-		Reset()
-	}
-
-	Meter interface {
-		Add(*KeyValue)
-		Notify()
-		NotifyOne(string)
-		Flush()
-		Reset()
 	}
 
 	Telemetry interface {
-		Logger() Logger
-		Tracer() Tracer
-		Meter() Meter
-		Close(...any)
+		Logger() Writer
+		Tracer() Writer
+		Meter() Writer
+		Close()
 	}
 
 	TelemetryOpt func(Telemetry)
 )
 
 var (
-	_clients map[string]CreateClient
+	_clients map[string]CreateFunc
 )
 
 func init() {
-	_clients = make(map[string]CreateClient)
+	_clients = make(map[string]CreateFunc)
 }
 
 func TraceRef[T any](name string, ref *T) TelemetryOpt {
@@ -98,6 +79,6 @@ func Open(name string, metadata Metadata, opts ...TelemetryOpt) Telemetry {
 	return nil
 }
 
-func RegisterClient(name string, fn CreateClient) {
+func Register(name string, fn CreateFunc) {
 	_clients[name] = fn
 }

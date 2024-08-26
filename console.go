@@ -1,139 +1,115 @@
 package mintel
 
 import (
-	"log"
+	"fmt"
+	"sync"
 
 	"github.com/vedadiyan/mintel/util/template"
 )
 
 type (
-	ConsoleLogger struct {
+	ConsoleWriter struct {
+		data   map[string]any
+		tel    *Console
 		binder template.Binder
+	}
+
+	ConsoleLogger struct {
+		*ConsoleWriter
 	}
 	ConsoleTracer struct {
-		data   map[string]map[string]any
-		binder template.Binder
+		*ConsoleWriter
 	}
 	ConsoleMeter struct {
-		data   map[string]map[string]any
-		binder template.Binder
+		*ConsoleWriter
 	}
-	ConsoleClient struct {
-		logger Logger
-		tracer Tracer
-		meter  Meter
+
+	Console struct {
+		logger *ConsoleLogger
+		tracer *ConsoleTracer
+		meter  *ConsoleMeter
+		pool   *sync.Pool
+		mut    sync.Mutex
 	}
 )
 
-func NewConsole(l, t, m template.Binder) *ConsoleClient {
-	c := new(ConsoleClient)
-	c.logger = &ConsoleLogger{
-		binder: l,
+func NewConsole(l, t, m template.Binder) CreateFunc {
+	var pool *sync.Pool
+	pool = &sync.Pool{
+		New: func() any {
+			c := new(Console)
+			c.logger = &ConsoleLogger{
+				ConsoleWriter: &ConsoleWriter{
+					binder: l,
+					tel:    c,
+					data:   make(map[string]any),
+				},
+			}
+			c.tracer = &ConsoleTracer{
+				ConsoleWriter: &ConsoleWriter{
+					binder: t,
+					tel:    c,
+					data:   make(map[string]any),
+				},
+			}
+			c.meter = &ConsoleMeter{
+				ConsoleWriter: &ConsoleWriter{
+					binder: m,
+					tel:    c,
+					data:   make(map[string]any),
+				},
+			}
+			c.pool = pool
+			return c
+		},
 	}
-	c.tracer = &ConsoleTracer{
-		binder: t,
-		data:   make(map[string]map[string]any),
+
+	return func(m Metadata) Telemetry {
+		tel := pool.Get().(Telemetry)
+		return tel
 	}
-	c.meter = &ConsoleMeter{
-		binder: m,
-		data:   make(map[string]map[string]any),
+}
+
+func (c *Console) Logger() Writer {
+	return c.logger
+}
+
+func (c *Console) Tracer() Writer {
+	return c.tracer
+}
+
+func (c *Console) Meter() Writer {
+	return c.meter
+}
+
+func (c *Console) Print(v any) {
+	fmt.Println(v)
+}
+
+func (c *Console) Close() {
+	c.Logger().Flush()
+	c.Tracer().Flush()
+	c.Meter().Flush()
+	defer c.pool.Put(c)
+	defer c.logger.Clear()
+	defer c.tracer.Clear()
+	defer c.meter.Clear()
+}
+
+func (c *ConsoleWriter) Add(kvs ...*KeyValue) Writer {
+	for _, kv := range kvs {
+		c.data[kv.Key] = kv.Value
 	}
 	return c
 }
 
-func (c *ConsoleClient) Logger() Logger {
-	return c.logger
+func (c *ConsoleWriter) Flush() {
+	c.tel.Print(template.Bind(c.binder, c.data))
 }
 
-func (c *ConsoleClient) Tracer() Tracer {
-	return c.tracer
-}
-
-func (c *ConsoleClient) Meter() Meter {
-	return c.meter
-}
-
-func (c *ConsoleClient) Close(v ...any) {
-	c.Tracer().Notify()
-	c.Meter().Notify()
-	log.Println("DONE", v)
-}
-
-func (c *ConsoleLogger) Debug(kvs ...*KeyValue) {
-	m := make(map[string]any)
-	for _, item := range kvs {
-		m[item.Key] = item.Value
-	}
-
-	l := template.Bind(c.binder, m)
-	log.Println("DEBUG", l)
-}
-
-func (c *ConsoleLogger) Info(kvs ...*KeyValue) {
-	m := make(map[string]any)
-	for _, item := range kvs {
-		m[item.Key] = item.Value
-	}
-
-	l := template.Bind(c.binder, m)
-	log.Println("INFO", l)
-}
-
-func (c *ConsoleLogger) Warning(kvs ...*KeyValue) {
-	m := make(map[string]any)
-	for _, item := range kvs {
-		m[item.Key] = item.Value
-	}
-
-	l := template.Bind(c.binder, m)
-	log.Println("WARNING", l)
-}
-
-func (c *ConsoleLogger) Error(err error) {
-	log.Println("ERROR", err)
-}
-
-func (c *ConsoleLogger) Flush() {
-
-}
-
-func (c *ConsoleTracer) Add(kv *KeyValue) {
-	c.data[kv.Key] = kv.Value
-}
-
-func (c *ConsoleTracer) Notify() {
-	log.Println("TRACE", template.Bind(c.binder, c.data))
-}
-
-func (c *ConsoleTracer) NotifyOne(key string) {
-	log.Println("TRACE", key, c.data[key])
-}
-
-func (c *ConsoleTracer) Flush() {}
-
-func (c *ConsoleTracer) Reset() {
-	for key := range c.data {
-		delete(c.data, key)
-	}
-}
-
-func (c *ConsoleMeter) Add(kv *KeyValue) {
-	c.data[kv.Key] = kv.Value
-}
-
-func (c *ConsoleMeter) Notify() {
-	for key, value := range c.data {
-		log.Println("TRACE", key, value)
-	}
-}
-
-func (c *ConsoleMeter) NotifyOne(key string) {
-	log.Println("TRACE", key, c.data[key])
-}
-
-func (c *ConsoleMeter) Flush() {}
-
-func (c *ConsoleMeter) Reset() {
+func (c *ConsoleWriter) Clear() {
+	c.tel.mut.Lock()
+	defer c.tel.mut.Unlock()
 	for key := range c.data {
 		delete(c.data, key)
 	}

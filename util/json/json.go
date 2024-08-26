@@ -97,7 +97,7 @@ func (e *Encoder) encodeMap(v reflect.Value) {
 		key := ks[i]
 		e.encodeValue(key)
 		e.buffer.WriteByte(':')
-		e.Encode(v.MapIndex(key))
+		e.Encode(v.MapIndex(key).Elem())
 	}
 	e.buffer.WriteByte('}')
 }

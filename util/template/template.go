@@ -33,7 +33,6 @@ var (
 	mainPattern  = regexp.MustCompile(`\$\([^\(^\)]*\)`)
 	indexPattern = regexp.MustCompile(`\[[^\[^\]]*\]`)
 	digit        = regexp.MustCompile(`[0-9]+$`)
-	space        = regexp.MustCompile(`(("[^"]*"|[^"\s]*)*)\s*`)
 )
 
 func TreatTopAsMap() TemplateWriterOpts {
@@ -178,6 +177,10 @@ func Parse(templateStr string) (Binder, error) {
 }
 
 func Bind(binder Binder, v any) string {
+	if binder == nil {
+		return string(json.Marshal(v))
+	}
+
 	templateStr := binder["_"](nil)
 	for key, value := range binder {
 		value := value(v)
